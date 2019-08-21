@@ -115,7 +115,7 @@
     file: 'sampledata/flying saucer/flying sacuer.obj',
     name: 'flying sacuer',
     recenter: 'root',
-    scale: 0.308978,
+    scale: 0.048978,
   },
   version: '0.54:2',
 }

@@ -42,11 +42,6 @@ dependencies {
 }
 
 
-sceneform.asset('sampledata/car/model.obj',
-        'default',
-        'sampledata/car/model.sfa',
-        'src/main/assets/model')
-
 sceneform.asset('sampledata/newcar/car_02.obj',
         'default',
         'sampledata/newcar/car_02.sfa',
