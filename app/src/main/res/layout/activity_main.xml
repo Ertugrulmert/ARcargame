@@ -5,11 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
-<fragment
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/arFragment"
-    android:name="com.google.ar.sceneform.ux.ArFragment" />
 
+    <fragment
+        android:id="@+id/arFragment"
+        android:name="com.google.ar.sceneform.ux.ArFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
+    <com.mertugrul.cargame01.Joystick
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_alignBottom="@id/arFragment"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/joystick" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="67dp"
+        android:text="TextView"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display3"
+        android:textSize="30sp" />
 </RelativeLayout>
