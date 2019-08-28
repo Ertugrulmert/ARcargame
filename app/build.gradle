@@ -58,3 +58,13 @@ sceneform.asset('sampledata/donut/model.obj',
         'default',
         'sampledata/donut/model.sfa',
         'src/main/assets/model')
+
+sceneform.asset('sampledata/start/tinker.obj',
+        'default',
+        'sampledata/start/tinker.sfa',
+        'src/main/assets/tinker')
+
+sceneform.asset('sampledata/endonut/end.obj',
+        'default',
+        'sampledata/endonut/end.sfa',
+        'src/main/assets/end')

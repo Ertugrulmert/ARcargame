@@ -23,7 +23,17 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="67dp"
+        android:layout_alignParentBottom="false"
         android:text="TextView"
         android:textAppearance="@style/TextAppearance.AppCompat.Display3"
+        android:textSize="30sp" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="67dp"
+        android:layout_alignParentRight="true"
+        android:text="TextView"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textSize="30sp" />
 </RelativeLayout>
