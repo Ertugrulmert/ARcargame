@@ -4,20 +4,29 @@ import java.lang.Math;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
+import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.arch.lifecycle.Observer;
 import android.content.Context;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,9 +48,13 @@ import com.google.ar.sceneform.math.QuaternionEvaluator;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.math.Vector3Evaluator;
 import com.google.ar.sceneform.rendering.ModelRenderable;
+import com.google.ar.sceneform.rendering.PlaneRenderer;
+import com.google.ar.sceneform.rendering.Texture;
 import com.google.ar.sceneform.ux.ArFragment;
 
 public class MainActivity extends AppCompatActivity {
+
+    ScoreRepository scoreRepository;
 
     private ArFragment arFragment;
     private Anchor startAnchor = null;
@@ -53,12 +66,15 @@ public class MainActivity extends AppCompatActivity {
     private Scene scene;
     private Camera camera;
 
+    private ConstraintLayout constraintLayout;
+    private Switch directionSwitch;
 
     private CountDownTimer gameTimer;
     private int count = 0;
     private int score = 0;
     private TextView scoreText;
     private TextView timeText;
+    private TextView highScoreText;
     private boolean createdGame = false;
     private MediaPlayer mp;
 
@@ -99,16 +115,24 @@ public class MainActivity extends AppCompatActivity {
 
                     if (drive != null && joystick.getMoving()) {
                         direction = joystick.getDegrees();
-                        increment = new Vector3((float) (Math.sin(direction)),0,(float)  (Math.cos(direction)));
                         drive.end();
-                        drive.setObjectValues(carNode.getWorldPosition(), Vector3.add(carNode.getWorldPosition(), carNode.getLeft().scaled(0.003f)));
+                        //setting forward or reverse direction
+                        if (directionSwitch.isChecked()) {
+                            increment = new Vector3((float) (-1 * Math.sin(direction)), 0, (float) (-1 * Math.cos(direction)));
+                            drive.setObjectValues(carNode.getWorldPosition(), Vector3.add(carNode.getWorldPosition(), carNode.getRight().scaled(0.003f)));
+                        }
+                        else {
+                            increment = new Vector3((float) (Math.sin(direction)), 0, (float) (Math.cos(direction)));
+                            drive.setObjectValues(carNode.getWorldPosition(), Vector3.add(carNode.getWorldPosition(), carNode.getLeft().scaled(0.003f)));
+                        }
+
                         //carNode.setWorldRotation(Quaternion.axisAngle(new Vector3(0.0f, 1.0f, 0.0f), (float)direction));
                       //  if (joystick.getMoving())
 
                        turnAngle = Vector3.angleBetweenVectors(carNode.getLeft(),increment);
                        if (Vector3.cross(carNode.getLeft(),increment).y < 0)
                            turnAngle = -turnAngle;
-                       turnAngle *= 0.009f;
+                       turnAngle *= 0.011f;
                        turnQuaternion = Quaternion.multiply(carNode.getLocalRotation(),new Quaternion(new Vector3(0,1.0f,0),turnAngle));
                         carNode.setLocalRotation(turnQuaternion);
 
@@ -148,7 +172,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
     @Override
     public void onBackPressed() {
             //Remove an anchor node
@@ -161,10 +184,11 @@ public class MainActivity extends AppCompatActivity {
                 createdGame = false;
                 directionHandler.removeCallbacks(directionChecker);
                 drive.end();
-                startScreen();
                 score=0;
-                scoreText.setText("");
-                timeText.setText("");
+                scoreText.setVisibility(View.INVISIBLE);
+                timeText.setVisibility(View.INVISIBLE);
+                highScoreText.setVisibility(View.INVISIBLE);
+                constraintLayout.setVisibility(View.INVISIBLE);
 
             } else {
                 System.out.println("Quitting game");
@@ -182,13 +206,28 @@ public class MainActivity extends AppCompatActivity {
         mp.setVolume(1, 1);
 
         arFragment = (ArFragment) getSupportFragmentManager().findFragmentById(R.id.arFragment);
+
+        constraintLayout = findViewById(R.id.cons);
+        constraintLayout.setVisibility(View.INVISIBLE);
+        directionSwitch = findViewById(R.id.switch2);
+        directionSwitch.setClickable(false);
+
         scoreText = findViewById(R.id.textView);
         scoreText.setTextColor(Color.WHITE);
-        scoreText.setText("");
+        scoreText.setVisibility(View.INVISIBLE);
+
         timeText = findViewById(R.id.textView2);
         timeText.setTextColor(Color.WHITE);
-        timeText.setText("");
-        gameTimer = new CountDownTimer(10000,1000) {
+        timeText.setVisibility(View.INVISIBLE);
+
+        highScoreText = findViewById(R.id.highscore);
+        highScoreText.setTextColor(Color.WHITE);
+        highScoreText.setVisibility(View.INVISIBLE);
+
+        joystick = findViewById(R.id.joystick);
+        joystick.setVisibility(View.INVISIBLE);
+
+        gameTimer = new CountDownTimer(25000,1000) {
             @Override
             public void onTick(long l) {
                 timeText.setText("Time Left: "+ l/1000);
@@ -204,13 +243,21 @@ public class MainActivity extends AppCompatActivity {
 
         scene = arFragment.getArSceneView().getScene();
         camera = scene.getCamera();
-        startScreen();
+        startGame();
 
+
+
+
+
+    }
+
+    private void startGame(){
         arFragment.setOnTapArPlaneListener((hitResult, plane, motionEvent) -> {
             if (!createdGame) {
+                if (anchornode != null ) onBackPressed();
                 createdGame = true;
                 scoreText.setText("Score:" + score);
-                startNode.setParent(null);
+                //  startNode.setParent(null);
                 Anchor anchor = hitResult.createAnchor();
                 anchornode = new AnchorNode(anchor);
                 score = 0;
@@ -229,8 +276,14 @@ public class MainActivity extends AppCompatActivity {
                 buildStars();
 
                 arFragment.getArSceneView().getScene().addChild(anchornode);
-                //create joystick
-                joystick = findViewById(R.id.joystick);
+
+                scoreText.setVisibility(View.VISIBLE);
+                timeText.setVisibility(View.VISIBLE);
+                joystick.setVisibility(View.VISIBLE);
+                highScoreText.setVisibility(View.INVISIBLE);
+                constraintLayout.setVisibility(View.VISIBLE);
+                directionSwitch.setClickable(true);
+
                 gameTimer.start();
                 directionHandler = new Handler();
                 directionChecker.run();
@@ -243,6 +296,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void endScreen() {
         drive.end();
+        directionSwitch.setClickable(false);
         Node endnode = new Node();
         ModelRenderable.builder()
                 .setSource(this, Uri.parse("end.sfb"))
@@ -267,12 +321,73 @@ public class MainActivity extends AppCompatActivity {
         fall.setInterpolator(new AccelerateDecelerateInterpolator());
         fall.setDuration(1000);
         fall.setTarget(endnode);
+        fall.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animator) {}
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                Node endnode2 = new Node();
+                ModelRenderable.builder()
+                        .setSource(getApplicationContext(), Uri.parse("timeout.sfb"))
+                        .build()
+                        .thenAccept(modelRenderable -> {
+                            endnode2.setRenderable(modelRenderable);
+                            anchornode.addChild(endnode2);
+                        })
+                        .exceptionally(throwable -> {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+                            builder.setMessage(throwable.getMessage())
+                                    .show();
+                            return null;
+                        });
+                endnode2.setLocalPosition(Vector3.add(carNode.getLocalPosition(),new Vector3(0f,1.0f,0)));
+
+                ObjectAnimator fall2 = new ObjectAnimator();
+                fall2.setObjectValues(endnode2.getLocalPosition(),Vector3.add(carNode.getLocalPosition(),new Vector3(0.059f,0.050f,0.22f)));
+                fall2.setPropertyName("localPosition");
+                fall2.setEvaluator(new Vector3Evaluator());
+                fall2.setRepeatCount(0);
+                fall2.setInterpolator(new AccelerateDecelerateInterpolator());
+                fall2.setDuration(1000);
+                fall2.setTarget(endnode2);
+                fall2.start();
+            }
+            @Override
+            public void onAnimationCancel(Animator animator) {}
+            @Override
+            public void onAnimationRepeat(Animator animator) {}
+        });
         fall.start();
 
+
+        scoreRepository= new ScoreRepository(getApplicationContext());
+        //  scoreRepository.insertScore(15);
+
+        scoreRepository.getScore().observe( this, new Observer<List<HighScore>>() {
+            @Override
+            public void onChanged(@Nullable List<HighScore> scores) {
+                int newHigh = score;
+                for(HighScore highScore : scores) {
+                    System.out.println("-----------------------");
+                    System.out.println(highScore.getHighScore());
+                    if (highScore.getHighScore() > newHigh){
+                        newHigh = highScore.getHighScore();
+                        System.out.println("score changd:"+ newHigh);
+                    }
+                    else
+                        scoreRepository.deleteScore(highScore);
+                }
+                scoreRepository.insertScore(newHigh);
+                highScoreText.setText("HighScore: "+ newHigh);
+            }
+        });
+
+        highScoreText.setTextColor(Color.WHITE);
+        highScoreText.setVisibility(View.VISIBLE);
     }
 
 
-    private void startScreen(){
+    /**private void startScreen(){
         Plane plane;
        // if (arFragment.getArSceneView().getArFrame().getUpdatedAnchors().iterator().hasNext())
           //  Anchor = arFragment.getArSceneView().getArFrame().getUpdatedTrackables(Class Plane).iterator().next();
@@ -301,7 +416,7 @@ public class MainActivity extends AppCompatActivity {
                         });
                 System.out.println("start built");
         }
-
+ **/
 
 
 

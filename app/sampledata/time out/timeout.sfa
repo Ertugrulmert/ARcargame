@@ -1,0 +1,42 @@
+{
+  materials: [
+    {
+      name: 'color_14900002',
+      parameters: [
+        {
+          baseColor: null,
+        },
+        {
+          baseColorTint: [
+            0.89019599999999999,
+            0.35686299999999999,
+            0.13333300000000001,
+            1,
+          ],
+        },
+        {
+          metallic: 0,
+        },
+        {
+          roughness: 1,
+        },
+        {
+          opacity: null,
+        },
+      ],
+      source: 'build/sceneform_sdk/default_materials/obj_material.sfm',
+    },
+  ],
+  model: {
+    attributes: [
+      'Position',
+      'Orientation',
+    ],
+    collision: {},
+    file: 'sampledata/time out/timeout.obj',
+    name: 'timeout',
+    recenter: 'root',
+    scale: 0.00382599999999999,
+  },
+  version: '0.54:2',
+}

@@ -192,7 +192,7 @@
     file: 'sampledata/newcar/car_02.obj',
     name: 'car_02',
     recenter: 'root',
-    scale: 0.0005950000000000003,
+    scale: 0.0003550000000000003,
   },
   version: '0.54:2',
 }
